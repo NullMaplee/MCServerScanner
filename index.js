@@ -4,10 +4,11 @@ var { Webhook, MessageBuilder } = require('discord-webhook-node');
 
 const hook = new Webhook("PUT WEBHOOK HERE");
 
-var CurrentIP = "1.1.1.1"
-var EndIP = "255.255.255.255"
-var Threads = 100;
-var Timeout = 3000;
+var CurrentIP = "1.1.1.1" // The starting ip
+var EndIP = "255.255.255.255" // The ending ip
+var Threads = 100; // The amount of threads
+var Timeout = 3000; // Timeout to check if a server is a minecraft server in miliseconds
+var MaxPlayersList = 50 // Maxiumum players from a player list to display in webhook message
 
 async function ScanServer(IP, Port=25565)
 {
@@ -22,12 +23,22 @@ async function ScanServer(IP, Port=25565)
       if (err) {
           // Port 25565 is open but its not a mc server
       } else {
+        var FinalPlayerList = [];
+        for(const Player of res.players.sample) {
+          if (FinalPlayerList.length < MaxPlayersList)
+          {
+            FinalPlayerList.push(Player.name)
+          }
+        }
         const embed = new MessageBuilder()
         .setTitle(IP)
         .setColor('#03b2f8')
-        .setDescription('Description: ' + res.description.text + '\nPlayers: ' + res.players.online + '\nVersion: ' + res.version.name);
+        .setDescription('Description: ' + res.description.text + '\nPlayers: ' + res.players.online + '\nVersion: ' + res.version.name + "\nPlayers: " + FinalPlayerList.join(", "));
  
         hook.send(embed);
+        console.log('IP: ', IP)
+        console.log('Players:', res.players.online)
+        console.log('Desc:', res.description.text)
       }
   }, Timeout);
     }
@@ -61,7 +72,7 @@ async function DoScan()
     ScanServer(CurrentIP);
     if (CurrentIP === EndIP) { console.log("Reached End IP"); process.exit() }
     CurrentIP = incrementIP(CurrentIP);
-    // wait 1000 milliseconds 
+    // wait 1 second
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }
